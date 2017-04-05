@@ -19,7 +19,7 @@ before_install:
 - sudo apt-get install build-essential
 - sudo npm install -g bower grunt-cli
 script:
-- mvn -Pprod package
+- mvn -Pprod -DskipTests package
 - export WAR_FILE="$(ls target/ | egrep .*\.war$)"
 - export NAME="$(echo $WAR_FILE | egrep -oh '(.*)[^\.war]')"
 - export TAG_NAME=$(git describe --exact-match)
