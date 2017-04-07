@@ -4,8 +4,6 @@ set -e
 
 REPO="rylyade1/testsecrat"
 
-ls target/
-echo $NAME
 cp target/$(echo $NAME).tar.gz .docker/
 cd .docker/
 
