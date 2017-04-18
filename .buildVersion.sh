@@ -21,6 +21,7 @@ fi
 
 if ! mvn -v; then 
 	printf printf '\n%s\n\n' "${RED}Maven in not installed.${NORMAL}"
+	exit 1
 fi
 
 VERSION=v$(printf 'VERSION\t${project.version}\n0\n' | mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate | grep VERSION | awk '{printf $2}')
