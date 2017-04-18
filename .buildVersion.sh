@@ -35,7 +35,7 @@ if output=$(travis lint); then
 	printf '%s\n' "travis check done."
 	printf '\n%s\n' "${YELLOW}Creating git tag ...${NORMAL}"
 
-	if ! git tag -a $VERSION -m "latest version tag."; then
+	if git tag -a $VERSION -m "latest version tag."; then
 		printf "[ ${GREEN}\xE2\x9C\x94${NORMAL} ] "
 		printf '%s\n' "git tag created."
 		printf '\n%s\n' "${YELLOW}Pushing tag and latest commit to remote...${NORMAL}"
