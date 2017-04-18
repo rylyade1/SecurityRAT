@@ -19,6 +19,10 @@ else
 	printf '%s\n' "Current branch is master and it is up to date."
 fi
 
+if ! mvn -v; then 
+	printf printf '\n%s\n\n' "${RED}Maven in not installed.${NORMAL}"
+fi
+
 VERSION=v$(printf 'VERSION\t${project.version}\n0\n' | mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate | grep VERSION | awk '{printf $2}')
 
 printf '\n%-s\n' "${BLUE}Starting build for version $VERSION...${NORMAL}"
