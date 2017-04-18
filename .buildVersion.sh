@@ -20,7 +20,8 @@ else
 fi
 
 if ! mvn -v; then 
-	printf '\n%s\n\n' "${RED}Maven in not installed.${NORMAL}"
+	printf "[ ${RED}\xE2\x9D\x8C${NORMAL} ] "
+	printf '%s\n\n' "Maven in not installed."
 	exit 1
 fi
 
@@ -34,7 +35,7 @@ if output=$(travis lint); then
 	printf '%s\n' "travis check done."
 	printf '\n%s\n' "${YELLOW}Creating git tag ...${NORMAL}"
 
-	if [ -z "$(git tag -a $VERSION -m "latest version tag.")" ]; then
+	if ! git tag -a $VERSION -m "latest version tag."; then
 		printf "[ ${GREEN}\xE2\x9C\x94${NORMAL} ] "
 		printf '%s\n' "git tag created."
 		printf '\n%s\n' "${YELLOW}Pushing tag and latest commit to remote...${NORMAL}"
@@ -43,11 +44,15 @@ if output=$(travis lint); then
 			printf "[ ${GREEN}\xE2\x9C\x94${NORMAL} ] "
 			printf '%s\n' "New version pushed. This will trigger travis build."
 		fi
+	else
+		printf "[ ${RED}\xE2\x9D\x8C${NORMAL} ] "
+		printf '%s\n\n' "Tag already exist. Make sure you update the pom.xml file."
+		exit 1
 	fi
 	
 	
 else
 	printf "[ ${RED}\xE2\x9D\x8C${NORMAL} ] "
-	printf '%s\n' "Travis check failed outputing $output"
+	printf '%s\n\n' "Travis check failed outputing $output"
 	exit 1
 fi
