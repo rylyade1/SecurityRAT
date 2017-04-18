@@ -20,7 +20,7 @@ else
 fi
 
 if ! mvn -v; then 
-	printf printf '\n%s\n\n' "${RED}Maven in not installed.${NORMAL}"
+	printf '\n%s\n\n' "${RED}Maven in not installed.${NORMAL}"
 	exit 1
 fi
 
