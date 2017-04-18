@@ -135,6 +135,3 @@ src/test/javascript/spec/confToRun.js
 
 #keystore file
 keystore.p12
-
-#buildVersion file
-.buildVersion.sh 
