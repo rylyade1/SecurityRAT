@@ -1,181 +1,321 @@
-'use strict'
+'use strict';
+/* jshint undef: true, unused: true */
+/* globals urlpattern, re_weburl */
 
 angular.module('sdlctoolApp')
-		.controller('TestRequirements', function(entity, $scope, $uibModalInstance, $filter, appConfig, $window, testAutomation, $q,
-			authenticatorService, $uibModalStack, $timeout, $interval) {
-	$scope.entity = entity;
-	$scope.testObject = {};
-	$scope.testResults = {};
-	$scope.urlPattern = urlpattern.javascriptStringRegex;
+    .controller('TestRequirements', function (entity, $scope, $uibModalInstance, $filter, appConfig, $window, testAutomation, $q,
+        authenticatorService, $uibModalStack, $timeout, AlertService) {
+        var stopped = false;
+        $scope.STATUSCONSTANT = {
+            'ERROR': -1,
+            'IN_PROGRESS': 0,
+            'PASSED': 1,
+            'FAILED': 2
+        };
 
-	$scope.displayProperties = {
-		show: true,
-		showTypes: 'Show selected requirements',
-		myglyphicon: "glyphicon glyphicon-plus",
-		showCloseButton: true
-	}
-	$scope.authenticationProperties = {
-		spinnerProperty : {
-			fail: false,
-			showSpinner: false,
-			failed: '',
-			text: 'SecurityCAT Authentication running...'
-		},
-		displayProperty : {
-				url: appConfig.securityCAT,
-				message: 'You are not authenticated, please click on the following link to authenticate yourself. You will have one minute after a click on the link.'
-		},
-		checkerUrl : "/api/account",
-		authenticatorpromise : {}
-	}
+        var LETTERLIMIT = 200;
 
-	$scope.error = {
-		message: "",
-		class: ""
-	}
+        $scope.entity = entity;
 
-	$scope.templates = [
-		{name: 'info', url: 'scripts/app/editor/requirements/testRequirementsTemplates/infoTemplate.html', title: 'Test requirements'},
-		{name: 'loading', url: 'scripts/app/editor/requirements/testRequirementsTemplates/loadingTemplate.html', title: 'Test requirements'},
-		{name: 'result', url: 'scripts/app/editor/requirements/testRequirementsTemplates/resultTemplate.html', title: 'Test results'},
-		{name: 'error', url: 'scripts/app/editor/requirements/testRequirementsTemplates/errorTemplate.html', title: 'Test requirements'}
-	]
+        $scope.testObject = {
+            testProperties: {}
+        };
 
-	$scope.templateInScope = {title: 'Test requirements', url: 'scripts/app/editor/requirements/testRequirementsTemplates/infoTemplate.html'};
+        $scope.testResults = {};
+        $scope.urlPattern = urlpattern.javascriptStringRegex;
 
-	$scope.toggleShowHide = function() {
-  	$scope.displayProperties.show = !$scope.displayProperties.show;
-  	if($scope.displayProperties.show) {
-  		$scope.displayProperties.showTypes = 'Show selected requirements';
-  		$scope.displayProperties.myglyphicon = "glyphicon glyphicon-plus";
-  	} else {
-  		$scope.displayProperties.showTypes = 'Hide selected requirements';
-  		$scope.displayProperties.myglyphicon = "glyphicon glyphicon-minus";
-  	}
-  }
+        $scope.displayProperties = {
+            show: true,
+            showTypes: 'Show selected requirements',
+            myglyphicon: 'glyphicon glyphicon-plus',
+            showCloseButton: true,
+            inProgressMessage: 'test running...'
+        };
 
-	$scope.parseEntity = function() {
-		$scope.testObject.reqs = [];
-		angular.forEach($scope.entity, function(req) {
-			$scope.testObject.reqs.push(req.shortName);
-		});
-	}
+        $scope.authenticationProperties = {
+            spinnerProperty: {
+                fail: false,
+                showSpinner: false,
+                failed: '',
+                text: 'SecurityCAT Authentication running...'
+            },
+            displayProperty: {
+                url: appConfig.securityCAT,
+                message: 'You are not authenticated, please click on the following link to authenticate yourself. You will have one minute after a click on the link.'
+            },
+            checkerUrl: '/api/account',
+            authenticatorpromise: {}
+        };
 
-	function cleanIntervalPromise() {
-		if(angular.isDefined($scope.interval)){
-				$interval.cancel($scope.interval);
-		}
-	}
+        $scope.error = {
+            message: '',
+            class: '',
+            display: false
+        };
 
-	function configureDisplay(actualTemplateName, showCloseButton, errorAlertType, errorMessage) {
-		$scope.displayProperties.showCloseButton = showCloseButton;
-		var template = $filter('filter')($scope.templates, {name: actualTemplateName}).pop()
-		$scope.templateInScope.url = template.url;
-		$scope.templateInScope.title = template.title;
-		$scope.error.class = errorAlertType;
-		$scope.error.message = errorMessage;
-	}
+        $scope.templates = [{
+                name: 'info',
+                url: 'scripts/app/editor/requirements/testRequirementsTemplates/infoTemplate.html',
+                title: 'Test requirements'
+            },
+            {
+                name: 'loading',
+                url: 'scripts/app/editor/requirements/testRequirementsTemplates/loadingTemplate.html',
+                title: 'Test requirements'
+            },
+            {
+                name: 'result',
+                url: 'scripts/app/editor/requirements/testRequirementsTemplates/resultTemplate.html',
+                title: 'Test results'
+            },
+            {
+                name: 'error',
+                url: 'scripts/app/editor/requirements/testRequirementsTemplates/errorTemplate.html',
+                title: 'Error'
+            }
+        ];
 
-	function fetchResult(resourceURI) {
-		testAutomation.fetchResult(resourceURI).then(function(testResults) {
-			configureDisplay('result', true, $scope.error.class, $scope.error.message)
-			$scope.testResults.self = appConfig.securityCAT + testResults.self;
-			var tempResults = testResults.requirements;
+        $scope.templateInScope = {
+            title: 'Test requirements',
+            url: 'scripts/app/editor/requirements/testRequirementsTemplates/infoTemplate.html'
+        };
 
-			angular.forEach(tempResults, function(result) {
-				if(angular.isUndefined(result.description))
-				var req = $filter('filter')(entity, {shortName: result.shortName}).pop();
-				result.description = req.description;
-				result.showOrder = req.showOrder;
-			});
+        $scope.toggleShowHide = function () {
+            $scope.displayProperties.show = !$scope.displayProperties.show;
+            if ($scope.displayProperties.show) {
+                $scope.displayProperties.showTypes = 'Show selected requirements';
+                $scope.displayProperties.myglyphicon = 'glyphicon glyphicon-plus';
+            } else {
+                $scope.displayProperties.showTypes = 'Hide selected requirements';
+                $scope.displayProperties.myglyphicon = 'glyphicon glyphicon-minus';
+            }
+        };
 
-			$scope.authenticationProperties.spinnerProperty.showSpinner = true;
-			$scope.testResults.reqs = tempResults;
-		}).catch(function() {
-			configureDisplay('error', true, 'alert alert-danger', "An error occurred when fetching the results.")
-			cleanIntervalPromise();
-		});
-	}
 
-	function checkState(location) {
-		// start the a promise and get the queue Id of the test in case the test is stopped.
-		$scope.checkStatePromise = $q.defer();
-		$scope.testId = location.split('/').pop();
-		testAutomation.checkState(location, $scope.checkStatePromise).then(function(resourceURI) {
-			$scope.displayProperties.showCloseButton = true;
-			//$scope.resourceURI = resourceURI
-			//run the init method every 10 sec.
-				$scope.interval = $interval(function() {
-					if(angular.isUndefined($scope.testResults.reqs) || ($scope.testResults.reqs.length < $scope.entity.length)) {
-						fetchResult(resourceURI);
-						$scope.authenticationProperties.spinnerProperty.text = "Automated test still in progress...";
-					}	else {
-						$scope.authenticationProperties.spinnerProperty.showSpinner = false;
-						$interval.cancel($scope.interval);
-					}
-				},2000);
-		}).catch(function(response) {
-				if(response.status === 400 && response.data.state === "NONEXISTENT") {
-					cleanIntervalPromise()
-					$timeout(function(){$uibModalStack.dismissAll();})
-					configureDisplay('error', true, "alert alert-success", "The test automation was successfully cancelled")
-				}
-		});
-	}
 
-	$scope.startTest = function() {
-		$scope.authenticationProperties.authenticatorpromise.derefer = $q.defer();
-		testAutomation.checkAuthentication($scope.authenticationProperties.checkerUrl, $scope.authenticationProperties.displayProperty,
-					$scope.authenticationProperties.spinnerProperty, $scope.authenticationProperties.authenticatorpromise).then(function(response) {
-						configureDisplay('loading', false, $scope.error.class, $scope.error.message)
-						$scope.animation = 'slide-animate'
+        $scope.parseEntity = function () {
+            $scope.testObject.requirements = [];
+            $scope.testResults.reqs = [];
+            angular.forEach($scope.entity, function (req) {
+                $scope.testResults.reqs.push({
+                    shortName: req.shortName,
+                    showOrder: req.order,
+                    description: req.description,
+                    testResults: [],
+                    status: 0
+                });
+                $scope.testObject.requirements.push(req.shortName);
+            });
+            stopped = false;
+            $scope.error.display = false;
+            $scope.authenticationProperties.showSpinner = false;
+        };
 
-						// start the test automation
-						testAutomation.startTest($scope.testObject).then(function(checkURI){
-							checkState(checkURI);
-						}, function(exception) {
-							configureDisplay('error', true, "alert alert-danger", "An error occurred when executing the test.")
-						});
-		})
-		.catch(function(exception) { // onRejected checker function
-			var errorMessage = "The authentication to the securityCAT tool was unsuccessful."
-			if(exception === "CORS") {
-				errorMessage = "Communication with the SecurityCAT Server was not possible due to Cross origin policy."
-			}
-			configureDisplay('error', true, "alert alert-danger", errorMessage)
-		});
-	}
+        $scope.showLongdesc = function (result) {
+            result.backUpLimitDesc = result.limitDesc;
+            result.limitDesc = undefined;
+        };
 
-	$scope.stopTest = function() {
-	    cleanIntervalPromise();
-		testAutomation.stopTest($scope.checkStatePromise, $scope.testId).then(function() {
-			//configureDisplay('error', true, "alert alert-success", "The test automation was successfully cancelled")
-			$scope.clear();
-		}).catch(function(){})
+        $scope.hideLongdesc = function (result) {
+            result.limitDesc = result.backUpLimitDesc;
+        };
 
-	}
+        function configureDisplay(actualTemplateName, showCloseButton, errorAlertType, errorMessage) {
+            $scope.displayProperties.showCloseButton = showCloseButton;
+            var template = $filter('filter')($scope.templates, {
+                name: actualTemplateName
+            }).pop();
+            $scope.templateInScope.url = template.url;
+            $scope.templateInScope.title = template.title;
+            $scope.error.class = errorAlertType;
+            $scope.error.message = errorMessage;
+        }
 
-	$scope.getProgressbarType = function(value) {
-		var type = '';
-		if (value < 50) {
-		 type = 'danger';
-	 	} else if (value < 80) {
-			type = 'warning';
-		} else if (value <= 100) {
-			type = 'success';
-		}
-		return type;
-	}
+        function fetchResult(location) {
 
-	$scope.pushCoordinates = function(event) {
-		$scope.mouseX = event.clientX;
-		$scope.mouseY = event.clientY;
-	}
+            testAutomation.fetchResult(location, $scope.acceptedHeaderConfig).then(function (response) {
+                configureDisplay('result', true, $scope.error.class, $scope.error.message);
 
-	$scope.clear = function() {
-		authenticatorService.cancelPromises($scope.authenticationProperties.authenticatorpromise);
-		$scope.authenticationProperties.spinnerProperty.showSpinner = false;
-		cleanIntervalPromise();
-		$uibModalInstance.dismiss();
-	}
-});
+                $scope.testResults.self = location;
+                var testComplete = true;
+                // var tempResults = testResults.requirements;
+
+                /* jshint loopfunc: true */
+                for (var i = 0; i < $scope.testResults.reqs.length; i++) {
+                    var element = $scope.testResults.reqs[i];
+                    if (element.status === 0) {
+                        var requirement = $filter('filter')(response, {
+                            requirement: element.shortName
+                        }).pop();
+                        if (angular.isDefined(requirement)) {
+                            angular.copy(requirement.testResults, element.testResults);
+                        }
+                        element.status = 1;
+                        angular.forEach(element.testResults, function (result) {
+                            var split = result.message.split('```');
+                            // set default.
+                            result.limitDesc = LETTERLIMIT;
+                            result.backUpLimitDesc = result.limitDesc;
+                            if(split.length > 1) {
+                                var charactersCounter = 0;
+                                var codeDelimiterCounter = 0; // must always be a multiple of 2.
+                                for (var j = 0; j < split.length; j++) {
+                                    charactersCounter += split[j].length;
+                                    if(charactersCounter < LETTERLIMIT || codeDelimiterCounter % 2 === 1) {
+                                        if(j < split.length - 1) {
+                                        codeDelimiterCounter++;
+                                        charactersCounter += 3; // for the code markdown delimeter
+                                        } else if ((j === split.length - 1) && angular.equals(split[j], '')) {
+                                            // needed to properly display the code snippet
+                                            // in case the return to new line is not present at the end.
+                                            result.message += '\n';
+                                        }
+                                    } else {
+                                        result.limitDesc = charactersCounter - split[j].length;
+                                        result.backUpLimitDesc = result.limitDesc;
+                                        break;
+                                    }
+                                }
+                            }
+                            // marks a requirement as completely tested if all its tests have completed.
+                            if ($scope.STATUSCONSTANT[result.status] === $scope.STATUSCONSTANT.IN_PROGRESS) {
+                                element.status = 0;
+                                testComplete = false;
+                            }
+                        });
+                    }
+                }
+
+                if (testComplete || stopped) {
+                    // console.log('Test stopped');
+                    $scope.authenticationProperties.spinnerProperty.showSpinner = false;
+                    // console.log($scope.testResults);
+                    authenticatorService.cancelPromises($scope.authenticationProperties.authenticatorpromise);
+                } else {
+                    $scope.authenticationProperties.spinnerProperty.text = 'Automated test still in progress...';
+                    $scope.authenticationProperties.spinnerProperty.showSpinner = true;
+                    $timeout(function () {
+                        if (!stopped) {
+                            fetchResult(location);
+                        }
+                    }, 3000);
+                }
+            }).catch(function () {
+                if (($filter('filter')($scope.testResults.reqs, {
+                        status: 1
+                    })).length === 0) {
+                    configureDisplay('error', true, 'alert alert-danger', 'An error occurred when fetching the results.');
+                } else {
+                    AlertService.clear();
+                    AlertService.error('An error occurred when fetching the remaining result.', '');
+                    configureDisplay('result', true, '', '');
+                }
+                authenticatorService.cancelPromises($scope.authenticationProperties.authenticatorpromise);
+                $scope.authenticationProperties.spinnerProperty.showSpinner = false;
+            });
+        }
+
+        function successCallbackAfterStart(headers) {
+            $scope.animation = 'slide-animate';
+            $scope.testId = headers.location.split('/').pop();
+            var url = '';
+            $scope.acceptedHeaderConfig = headers.config;
+            if (!re_weburl.test(headers.location)) {
+                url += appConfig.securityCAT.endsWith('/') ? appConfig.securityCAT.substr(0, appConfig.securityCAT.length - 1) : appConfig.securityCAT;
+            }
+            url += headers.location;
+            fetchResult(url);
+        }
+
+        $scope.startTest = function () {
+            $scope.error.display = false;
+            $scope.authenticationProperties.authenticatorpromise.derefer = $q.defer();
+            $scope.authenticationProperties.spinnerProperty.showSpinner = true;
+            testAutomation.headerConfig.withCredentials = false;
+            // check authentication by running sending the request to start the test.
+            testAutomation.startTest($scope.testObject)
+                .then(successCallbackAfterStart)
+                .catch(function (exception) {
+                    if (exception.status !== 500 && exception.status !== 403) {
+                        testAutomation.checkAuthentication($scope.testObject, $scope.authenticationProperties.displayProperty,
+                                $scope.authenticationProperties.spinnerProperty, $scope.authenticationProperties.authenticatorpromise)
+                            .then(successCallbackAfterStart)
+                            .catch(function (exception) { // onRejected checker function
+                                startTestForm.$submitted = false;
+                                var errorMessage = 'The authentication to the securityCAT tool was unsuccessful. ' +
+                                    'This can sometimes be due to wrong CORS header configurations. Please check this and try again.';
+                                if (exception === 'CORS') {
+                                    errorMessage = 'Communication with the SecurityCAT Server was not possible due to Cross origin policy. Please make sure this is properly set.';
+                                }
+                                configureDisplay('error', true, 'alert alert-danger', errorMessage);
+                            });
+                    } else {
+                        $scope.error.display = true;
+                        $scope.error.class = 'alert alert-danger';
+                        $scope.error.message = 'An error occured when starting the test.';
+                    }
+                });
+
+        };
+
+        function callbackAfterStop() {
+
+            if (($filter('filter')($scope.testResults.reqs, {
+                    status: 1
+                })).length === 0) {
+                $scope.clear();
+            } else {
+                configureDisplay('result', true, '', '');
+            }
+        }
+
+        $scope.stopTest = function () {
+            stopped = true;
+            // stops the running checkstate operation.
+            testAutomation.stopTest($scope.testId, $scope.acceptedHeaderConfig).then(function () {
+                AlertService.success('The test was successfully cancelled.', '');
+                callbackAfterStop();
+            }).catch(function () {
+                AlertService.add({
+                    type: 'danger',
+                    msg: 'The running test could not be cancelled.',
+                    params: []
+                });
+                callbackAfterStop();
+
+            });
+            $scope.displayProperties.inProgressMessage = 'N/A';
+            $scope.authenticationProperties.spinnerProperty.showSpinner = false;
+        };
+
+        $scope.getProgressbarType = function (value) {
+            var type = '';
+            if (value < 50) {
+                type = 'danger';
+            } else if (value < 80) {
+                type = 'warning';
+            } else if (value <= 100) {
+                type = 'success';
+            }
+            return type;
+        };
+
+        $scope.backToInfo = function () {
+            stopped = false;
+            $scope.parseEntity();
+            $scope.authenticationProperties.spinnerProperty.showSpinner = false;
+            configureDisplay('info', true, '', '');
+        };
+
+        $scope.pushCoordinates = function (event) {
+            $scope.mouseX = event.clientX;
+            $scope.mouseY = event.clientY;
+        };
+
+        $scope.clear = function () {
+            authenticatorService.cancelPromises($scope.authenticationProperties.authenticatorpromise);
+            $scope.authenticationProperties.spinnerProperty.showSpinner = false;
+            $uibModalInstance.dismiss();
+        };
+
+    });

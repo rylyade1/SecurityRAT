@@ -1,5 +1,6 @@
 package org.appsec.securityRAT.repository;
 
+import org.appsec.securityRAT.domain.OptColumn;
 import org.appsec.securityRAT.domain.OptColumnContent;
 import org.appsec.securityRAT.domain.ProjectType;
 import org.appsec.securityRAT.domain.RequirementSkeleton;
@@ -33,10 +34,19 @@ public interface OptColumnContentRepository extends JpaRepository<OptColumnConte
 			+ "left join optColumnContent.optColumn.projectTypes pt "
 			+ "left join optColumnContent.requirementSkeleton skeleton "
 			+ "where skeleton = :skeleton "
-			+ "and pt in :projectTypes")
+			+ "and pt in :projectTypes "
+			+ "and optColumnContent.optColumn.active = true")
 	@Transactional
 	Set<OptColumnContent> findOptColumnsForSkeletonAndProjectTypes (
 			@Param("skeleton") RequirementSkeleton skeleton,
 			@Param("projectTypes") List<ProjectType> projectTypes);
+
+	@Query("select distinct optColumnContent from OptColumnContent optColumnContent "
+            + "where optColumnContent.optColumn = :optColumn "
+            + "and optColumnContent.requirementSkeleton = :skeleton")
+    @Transactional
+    List<OptColumnContent> getOptColumnContentByOptColumnAndRequirement(
+        @Param("skeleton") RequirementSkeleton skeleton,
+        @Param("optColumn")OptColumn optColumn);
 
 }

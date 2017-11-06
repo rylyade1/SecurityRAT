@@ -1,3 +1,5 @@
+'use strict';
+
 angular.module('sdlctoolApp')
     .config(function ($stateProvider) {
         $stateProvider
@@ -18,5 +20,10 @@ angular.module('sdlctoolApp')
                 resolve: {
 
                 },
+                onEnter : function(sharedProperties, $state) {
+                    if(angular.isUndefined(sharedProperties.getProperty())){
+                        $state.go('editor');
+                    }
+                }
             });
     });

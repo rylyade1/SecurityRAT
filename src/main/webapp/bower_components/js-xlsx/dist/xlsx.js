@@ -7552,8 +7552,10 @@ return function parse_ws_xml_data(sdata, s, opts, guess) {
 
 function write_ws_xml_data(ws, opts, idx, wb) {
 	var o = {}, r = [], range = safe_decode_range(ws['!ref']), cell, ref, rr = "", cols = [], R, C;
+
 	// custom code from jay: begin
 	var dropdownIndexes = [];
+	var endRowIndexes = {};
 	o.o = [];
 	// custom code from jay: end
 	for(C = range.s.c; C <= range.e.c; ++C) cols[C] = encode_col(C);
@@ -7568,18 +7570,23 @@ function write_ws_xml_data(ws, opts, idx, wb) {
 				if(ws[ref].c !== undefined && ((ws[ref].c).indexOf("statusColumn") >= 0)){
 					var valuesIndexes = {};
 					write_ws_xml_data(wb.Sheets[wb.SheetNames[idx+1]], opts, idx+1, wb).dropdownIndexes.forEach(function(element) {
-//						console.log(element);
 						if(element.c.indexOf(ws[ref].v) >= 0) {
 							valuesIndexes.start = {col: element.dropdownStartIndex.col, row: element.dropdownStartIndex.row}
 							valuesIndexes.end = {col: element.dropdownEndIndex.col, row: element.dropdownEndIndex.row}
 						}
 					})
 					dropdownIndexes.push({dropdownStartIndex:{col:cols[C], row:encode_row(R + 1)}, valuesIndexes: valuesIndexes});
+					endRowIndexes[cols[C]] = encode_row(range.e.r); // set the number of the rows
 				}
 			} else {
 				if(ws[ref].c !== undefined && ((ws[ref].c).indexOf("statusColumn") >= 0)){
-//					console.log(ws[ref]);
 					dropdownIndexes.push({dropdownStartIndex: {col:cols[C], row:rr}, c: ws[ref].c})
+					endRowIndexes[cols[C]] = encode_row(R); // initialise the endIndex per statusColumn, which is in this case per column
+				} 
+				// this is needed since the many dropdowns can have different number of rows. 
+				// Dropdown should therefore not accept empty values in the list.
+				else if(ws[ref].v !== undefined) {
+					endRowIndexes[cols[C]] = encode_row(R);
 				}
 			}
 			// custom code from jay: end
@@ -7591,13 +7598,16 @@ function write_ws_xml_data(ws, opts, idx, wb) {
 //		if(r.length > 0) o[o.length] = (writextag('row', r.join(""), {r:rr}));
 	}
 
+
 	// custom code from jay: begin
 	if(dropdownIndexes.length > 0) {
 		dropdownIndexes.forEach(function(element) {
-			element.dropdownEndIndex = {col:  element.dropdownStartIndex.col, row:encode_row(range.e.r)};
+			element.dropdownEndIndex = {col:  element.dropdownStartIndex.col, row:endRowIndexes[element.dropdownStartIndex.col]};
+			// element.dropdownEndIndex = {col:  element.dropdownStartIndex.col, row:encode_row(range.e.r)};
 		})
 		o.dropdownIndexes = []; o.dropdownIndexes = dropdownIndexes;
 	}
+	// console.log(dropdownIndexes)
 	
 	return o;
 	// custom code from jay: end
@@ -7629,7 +7639,7 @@ function write_ws_xml(idx, opts, wb) {
 		var data_xml = write_ws_xml_data(ws, opts, idx, wb)
 //		console.log(data_xml);
 		rdata = data_xml.o.join("");
-		dropdownListIndexes = data_xml.dropdownIndexes;
+		if(data_xml.dropdownIndexes !== undefined) dropdownListIndexes = data_xml.dropdownIndexes;
 //		rdata = write_ws_xml_data(ws, opts, idx, wb);
 		if(rdata.length > 0) o[o.length] = (rdata);
 	}
@@ -7637,7 +7647,7 @@ function write_ws_xml(idx, opts, wb) {
 
 	if(ws['!merges'] !== undefined && ws['!merges'].length > 0) o[o.length] = (write_ws_xml_merges(ws['!merges']));
 	// custom code from jay:begin
-	if(idx === 0) {
+	if(idx === 0 && dropdownListIndexes.length > 0) {
 		var str = '<extLst><ext uri="{CCE6A557-97BC-4b89-ADB6-D9C93CAAB3DF}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main" ><x14:dataValidations count="'
 			str += dropdownListIndexes.length + '" xmlns:xm="http://schemas.microsoft.com/office/excel/2006/main">';
 		

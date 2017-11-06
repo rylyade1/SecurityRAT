@@ -1,7 +1,7 @@
-'use strict'
+'use strict';
 
 angular.module('sdlctoolApp')
-    .service('checkAuthentication', function(authenticatorService, apiFactory, appConfig) {
+    .factory('checkAuthentication', function(authenticatorService, apiFactory) {
         var checkRoutines = {};
 
         function jiraAuth(apiCall, displayProperty, spinnerProperty, promise) {
@@ -14,14 +14,15 @@ angular.module('sdlctoolApp')
                     promise.derefer.resolve(response);
                     authenticatorService.cancelPromises(promise);
                 }
-            }, function(exception) {
+            }).catch(function(exception) {
+                // console.log(exception)
                 if (exception.status === 401 || exception.status === 403) {
                     if (angular.isDefined(exception.errorException) && exception.errorException.opened.$$state.status === 0) {
                         exception.errorException.opened.$$state.value = false;
                         exception.errorException.opened.$$state.status = 1;
                     }
-                    if (apiCall.indexOf(appConfig.jiraRestApi) === -1)
-                        authenticatorService.startCheckAuthenticationProcess(apiCall, displayProperty, spinnerProperty, promise, jiraAuth);
+                    // if (apiCall.indexOf(appConfig.jiraRestApi) === -1)
+                    authenticatorService.startCheckAuthenticationProcess(apiCall, displayProperty, spinnerProperty, promise, jiraAuth);
                 } else {
                 	if (angular.isDefined(spinnerProperty.authenticating)){ spinnerProperty.authenticating = false; }
                     spinnerProperty.showSpinner = false;
@@ -34,7 +35,7 @@ angular.module('sdlctoolApp')
 
         checkRoutines = {
             jiraAuth: jiraAuth
-        }
+        };
 
         return checkRoutines;
     });
