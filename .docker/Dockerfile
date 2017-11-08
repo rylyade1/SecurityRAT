@@ -1,15 +1,11 @@
 FROM openjdk:8-jre-alpine
 
-ENV SERVER_SSL_KEY_STORE_PASSWORD="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32})"
-
 ENV COMPRESSEDFILE="securityRAT*.tar.gz"
 
 ENV JHIPSTER_SLEEP 0
 
 RUN addgroup securityrat && \
-	adduser -s /bin/sh -h /home/securityrat -G securityrat securityrat -D && \
-	# Generating store file
-	keytool -genkey -alias tomcat -storetype PKCS12 -keyalg RSA -keysize 2048 -keystore /home/securityrat/keystore.p12 -validity 3650 -storepass "${SERVER_SSL_KEY_STORE_PASSWORD}" -dname "CN=localhost, OU=unknown, O=unknown, L=unknown, S=unknown, C=unknown" -keypass "${SERVER_SSL_KEY_STORE_PASSWORD}"
+	adduser -s /bin/sh -h /home/securityrat -G securityrat securityrat -D
 
 USER securityrat
 
@@ -23,7 +19,7 @@ RUN tar -xzf $COMPRESSEDFILE && \
 	rm ${COMPRESSEDFILE} && \
 	rm -rf .cache/
 
-EXPOSE 9001
+EXPOSE 9000
 
 CMD echo "The application will start in ${JHIPSTER_SLEEP}s..." && \
 	sleep ${JHIPSTER_SLEEP} && \
