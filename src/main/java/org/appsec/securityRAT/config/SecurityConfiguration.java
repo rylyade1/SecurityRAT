@@ -54,10 +54,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	//
 	@Autowired
 	private CasClient casClient;
-	
+
 	@Inject
 	private Environment env;
-	
+
 	@Inject
 	private AjaxAuthenticationSuccessHandler ajaxAuthenticationSuccessHandler;
 
@@ -66,7 +66,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 	@Inject
 	private AjaxLogoutSuccessHandler ajaxLogoutSuccessHandler;
-	
+
 	@Inject
 	private Http401UnauthorizedEntryPoint authenticationEntryPoint;
 
@@ -75,12 +75,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 	@Inject
 	private RememberMeServices rememberMeServices;
-	
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-	
+
 	@Override
 	@ConditionalOnExpression("#{environment.getProperty('authentication.type').equals('FORM')}")
 	public void configure(WebSecurity web) throws Exception {
@@ -89,7 +89,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 				.antMatchers("/assets/**")
 				.antMatchers("/swagger-ui/index.html").antMatchers("/test/**");
 	}
-	
+
 	@Override
 	protected void configure(final HttpSecurity http) throws Exception {
 		final boolean registration = env.getProperty("authentication.registration", Boolean.class);
@@ -99,53 +99,54 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			clientFilter.setAuthenticationManager(authenticationManager());
 			final ClientAuthenticationEntryPoint casEntryPoint = new ClientAuthenticationEntryPoint();
 			casEntryPoint.setClient(casClient);
-			
+
 			http
                 .headers().frameOptions().sameOrigin()
-            .and()
-				.csrf()
-			.and()
-				.addFilterAfter(new CsrfCookieGeneratorFilter(),CsrfFilter.class).exceptionHandling()
-				.authenticationEntryPoint(casEntryPoint)
-			.and()
-				.logout()
-				.logoutUrl("/api/logout")
-				.logoutSuccessHandler(ajaxLogoutSuccessHandler)
-				.deleteCookies("JSESSIONID")
-				.permitAll()
-			.and()
-				.authorizeRequests()
-				.antMatchers("/api/register").denyAll()
-				.antMatchers("/api/account/reset_password/init").denyAll()
-				.antMatchers("/api/account/reset_password/finish").denyAll()
-				.antMatchers("/api/activate").denyAll()
-				.antMatchers("/api/authenticate").denyAll()
-				.antMatchers("/api/authentication_config").permitAll()
-				.antMatchers(HttpMethod.GET, "/frontend-api/**").hasAnyAuthority(AuthoritiesConstants.FRONTEND_USER, AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER)
-				.antMatchers(HttpMethod.GET, "/api/account").hasAuthority(AuthoritiesConstants.FRONTEND_USER)
-				.antMatchers("/api/training/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainings/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingBranchNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingCategoryNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingCustomSlideNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingGeneratedSlideNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingRequirementNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingTreeNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingTreeNodeUpdate/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingTreeNodesWithPreparedContent/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/trainingTreeNode/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/slideTemplates/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
-				.antMatchers("/api/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER)
-				.antMatchers(HttpMethod.GET, "/admin-api/configConstants").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.FRONTEND_USER, AuthoritiesConstants.USER)
-				.antMatchers("/admin-api/**").hasAnyAuthority(AuthoritiesConstants.ADMIN)
+                .and()
+                .csrf()
+                .and()
+                .addFilterAfter(new CsrfCookieGeneratorFilter(), CsrfFilter.class).exceptionHandling()
+                .authenticationEntryPoint(casEntryPoint)
+                .and()
+                .logout()
+                .logoutUrl("/api/logout")
+                .logoutSuccessHandler(ajaxLogoutSuccessHandler)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+                .and()
+                .authorizeRequests()
+                .antMatchers("/robots.txt").permitAll()
+                .antMatchers("/api/register").denyAll()
+                .antMatchers("/api/account/reset_password/init").denyAll()
+                .antMatchers("/api/account/reset_password/finish").denyAll()
+                .antMatchers("/api/activate").denyAll()
+                .antMatchers("/api/authenticate").denyAll()
+                .antMatchers("/api/authentication_config").permitAll()
+                .antMatchers(HttpMethod.GET, "/frontend-api/**").hasAnyAuthority(AuthoritiesConstants.FRONTEND_USER, AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER)
+                .antMatchers(HttpMethod.GET, "/api/account").hasAuthority(AuthoritiesConstants.FRONTEND_USER)
+                .antMatchers("/api/training/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainings/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingBranchNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingCategoryNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingCustomSlideNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingGeneratedSlideNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingRequirementNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingTreeNodes/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingTreeNodeUpdate/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingTreeNodesWithPreparedContent/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/trainingTreeNode/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/slideTemplates/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.TRAINER)
+                .antMatchers("/api/**").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.USER)
+                .antMatchers(HttpMethod.GET, "/admin-api/configConstants").hasAnyAuthority(AuthoritiesConstants.ADMIN, AuthoritiesConstants.FRONTEND_USER, AuthoritiesConstants.USER)
+                .antMatchers("/admin-api/**").hasAnyAuthority(AuthoritiesConstants.ADMIN)
 //				.antMatchers(HttpMethod.POST,"/admin-api/configConstants").denyAll()
 //				.antMatchers(HttpMethod.DELETE,"/admin-api/configConstants").denyAll()
 				.antMatchers("/**").authenticated()
 			.and()
 				.addFilterBefore(clientFilter, AnonymousAuthenticationFilter.class).exceptionHandling()
 				.authenticationEntryPoint(casEntryPoint).and();
-		} 
-		//Security configuration for Form login. The difference is needed because no all ant Matchers are permitted in both form of Authentication. 
+		}
+		//Security configuration for Form login. The difference is needed because no all ant Matchers are permitted in both form of Authentication.
 		else if(env.getProperty("authentication.type").equals("FORM")){
 			http
             .headers().frameOptions().sameOrigin()
@@ -177,7 +178,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 				.deleteCookies("JSESSIONID")
 				.permitAll();
 			if(registration)
-				http.authorizeRequests().antMatchers("/api/register").permitAll(); 
+				http.authorizeRequests().antMatchers("/api/register").permitAll();
 			else
 				http.authorizeRequests().antMatchers("/api/register").denyAll();
 			http
@@ -221,7 +222,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 			final ClientAuthenticationProvider clientProvider = new ClientAuthenticationProvider();
 			clientProvider.setClients(clients);
 			clientProvider.setUserDetailsService(casUserDetailsService);
-	
+
 			auth.authenticationProvider(clientProvider);
 		} else if(env.getProperty("authentication.type").equals("FORM")){
 			auth.userDetailsService(userDetailsService).passwordEncoder(

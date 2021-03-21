@@ -6,8 +6,6 @@ import org.springframework.data.elasticsearch.annotations.Document;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.Objects;
 
 
@@ -23,14 +21,15 @@ public class TrainingCustomSlideNode implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-    
-    
+
+
     @Column(name = "name")
     private String name;
-    
+
     @Column(name = "content")
+    @Lob
     private String content;
-    
+
     @Column(name = "anchor")
     private Integer anchor;
 

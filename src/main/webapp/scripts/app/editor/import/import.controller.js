@@ -12,7 +12,7 @@
  */
 angular.module('sdlctoolApp')
     .controller('ImportController', function ($scope, $location, $uibModalStack, sharedProperties, getRequirementsFromImport, Helper, checkAuthentication,
-        apiFactory, $filter, authenticatorService, $interval, SDLCToolExceptionService, $timeout, appConfig, $q, $uibModal, localStorageService, JiraService) {
+        apiFactory, $filter, authenticatorService, SDLCToolExceptionService, $timeout, appConfig, $q, $uibModal, localStorageService, JiraService) {
         $scope.status = {
             file: false,
             jira: false
@@ -24,18 +24,18 @@ angular.module('sdlctoolApp')
         $scope.requirements = [];
         $scope.lastRequirementId = 0;
         $scope.optionColumns = [];
-        //    $scope.promise = {};
         $scope.filterCategory = [];
         $scope.statusColumns = [];
         $scope.jiraLink = {};
         $scope.apiUrl = {};
-        // $scope.isTicket = false;
         $scope.name = '';
         $scope.importProperty = {
             spinner: {},
             promise: {},
             importing: false,
-            authenticating: false
+            authenticating: false,
+            defaultJIRAHost: appConfig.defaultJIRAHost,
+            jiraTicketInputPlaceholder: appConfig.defaultJIRAHost ? 'e.g. TEST-01 or https://your-jira.url/browse/YOURPROJECT-123' : 'e.g. https://your-jira.url/browse/YOURPROJECT-123'
         };
         $scope.checks = {
             url: {
@@ -45,48 +45,32 @@ angular.module('sdlctoolApp')
         };
         $scope.attachmentProperties = {};
 
-        // adds the authenticator moddal to the promise object
-        function addCheckAuthenticationModal(promise) {
-            angular.extend(promise, {
-                runningModalPromise: function () {
-                    var modalInstance = $uibModal.open({
-                        template: '<div class="modal-body"><div id="UsSpinner1" class=" text-center col-sm-1" id="UsSpinner" spinner-on="true" us-spinner=' +
-                            '"{radius:6, width:4, length:6, lines:9}"></div><br/><h4 class="text-center"> JIRA Authentication running...</h4></div>',
-                        controller: function () {},
-                        size: 'sm',
-                        backdrop: false
-                    });
-                    return modalInstance;
-                }
-            });
-        }
-
         //builds the URL object.
-        $scope.buildUrlObject = function (list) {
+        function buildUrlObject(list) {
             $scope.apiUrl = {};
             $scope.apiUrl.ticketKey = [];
-            // var hostSet = false;
             angular.extend($scope.apiUrl, Helper.buildJiraUrl(list));
-            // if($scope.apiUrl.ticketKey.length === 1) {
-            //  $scope.isTicket = true;
-            // }
-        };
+        }
+
+        var isImportFromLink = function (fileParam) {
+            return ($location.search().file !== undefined || fileParam !== undefined) && ($location.search().ticket === undefined);
+        }
 
         $scope.init = function () {
+            $scope.status.jira = true;
+            $timeout(function () { $('#jiraLink').focus(); }, 500)
             function onSuccess(attachment) {
-                // var modalInstance;
                 if (attachment.self !== undefined) {
                     $scope.importProperty.importing = true;
                     $scope.importProperty.spinner.showSpinner = false;
                     //cancels the promises if they are defined to prevent use of resources.
                     authenticatorService.cancelPromises($scope.importProperty.promise);
                     apiFactory.getJIRAInfo(attachment.content).then(function (yamlFile) {
-                        //                    if(modalInstance !== undefined){modalInstance.cancel('');}
                         var blob = new Blob([yamlFile], {
                             type: attachment.mimeType
                         });
                         $scope.readYamlFile(blob);
-                    }, function () {});
+                    }, function () { });
                 } else {
                     SDLCToolExceptionService.showWarning('Import unsuccessful', 'Invalid url in query parameter file. Please enter a valid JIRA ticket with an attachment.', SDLCToolExceptionService.DANGER);
                 }
@@ -106,31 +90,39 @@ angular.module('sdlctoolApp')
             if (url instanceof String) {
                 fileParam = url;
             }
-            // must be '==' and not '===' because fileParam is and object of type String but not "RESTORE"
             /* jshint eqeqeq: false */
             if (fileParam == 'RESTORE') {
+                $scope.status.jira = false;
                 $scope.importProperty.importing = true;
                 angular.extend($scope.importProperty.spinner, {
                     showSpinner: false
                 });
-
+                apiFactory.getAll('collections').then(function (collections) {
+                    $scope.collections = collections;
+                }, function () { });
                 apiFactory.getAll('projectTypes').then(
                     function (projectTypes) {
                         $scope.projectTypes = $filter('orderBy')(projectTypes, 'showOrder');
                         var yamlFile = localStorageService.get(appConfig.localStorageKey);
                         var blob = new Blob([yamlFile]);
-                        // $scope.importProperty.importing = true;
                         $scope.readYamlFileFromLocalStorage(blob);
                     },
-                    function () {});
+                    function () { });
+
             } else {
                 angular.extend($scope.importProperty.spinner, {
                     showSpinner: false
                 });
+                if (isImportFromLink(fileParam)) {
+                    $scope.status.jira = false;
+                }
+                apiFactory.getAll('collections').then(function (collections) {
+                    $scope.collections = collections;
+                }, function () { });
                 apiFactory.getAll('projectTypes').then(
                     function (projectTypes) {
                         $scope.projectTypes = $filter('orderBy')(projectTypes, 'showOrder');
-                        if (($location.search().file !== undefined || fileParam !== undefined) && ($location.search().ticket === undefined)) {
+                        if (isImportFromLink(fileParam)) {
                             var fileUrl;
                             if (fileParam !== undefined) {
                                 fileUrl = decodeURIComponent(fileParam.toString());
@@ -139,12 +131,10 @@ angular.module('sdlctoolApp')
                             }
                             /* jshint camelcase: false */
                             if (re_weburl.test(fileUrl)) {
-                                // uncommented if any exception modal are shown on importing. This was commented to show loading on import.
-                                // $uibModalStack.dismissAll('close exception modal');
                                 var urlSplit = fileUrl.split('/');
-                                $scope.buildUrlObject(urlSplit);
+                                buildUrlObject(urlSplit);
                                 $scope.importProperty.promise.derefer = $q.defer();
-                                addCheckAuthenticationModal($scope.importProperty.promise);
+                                Helper.addCheckAuthenticationModal($scope.importProperty.promise);
                                 var authenticatorProperty = {
                                     url: $scope.apiUrl.http + '//' + $scope.apiUrl.host,
                                     message: 'Attachment could not be imported because you are not authenticated.' +
@@ -156,12 +146,10 @@ angular.module('sdlctoolApp')
                                     }).catch(function (exception) {
                                         $scope.importProperty.authenticating = false;
                                         if (exception.status === 404) {
-                                            // $uibModalStack.dismissAll('cancel');
                                             SDLCToolExceptionService.showWarning('Import unsuccessful', 'No attachment with this id was found.', SDLCToolExceptionService.DANGER);
                                         }
                                     });
                             } else {
-                                //                                    $uibModalStack.dismissAll('cancel');
                                 SDLCToolExceptionService.showWarning('Import unsuccessful', 'Invalid url in query parameter file.', SDLCToolExceptionService.DANGER);
                             }
                         } else {
@@ -170,11 +158,9 @@ angular.module('sdlctoolApp')
                                 $scope.status.jira = true;
                                 $scope.uploadJira();
                             }
-                            $('#jiraLink').focus();
-                            $scope.status.jira = true;
                         }
                     },
-                    function () {});
+                    function () { });
             }
 
         };
@@ -190,11 +176,16 @@ angular.module('sdlctoolApp')
             }
         };
 
+
+        $scope.validateURLTicketValue = function (value) {
+            return Helper.validateURLTicketValue(value);
+        }
+
+
         $scope.uploadJira = function () {
-            // if (re_weburl.test($scope.jiraLink.url.trim())) {
+            $scope.jiraLink.url = JiraService.buildJiraUrl($scope.jiraLink.url);
             var urlSplit = $scope.jiraLink.url.split('/');
-            $scope.buildUrlObject(urlSplit);
-            // var apiCall = $scope.apiUrl.http + "//" + $scope.apiUrl.host + appConfig.jiraApiIssueType;
+            buildUrlObject(urlSplit);
             if ($scope.apiUrl.ticketKey.length !== 1) {
                 $scope.importProperty.importing = false;
                 $scope.uploadFail = true;
@@ -223,38 +214,29 @@ angular.module('sdlctoolApp')
                     $scope.importProperty.importing = false;
                 });
             }
-            // } else {
-            //     $scope.uploadFail = true;
-            //     $scope.failMessage = "The entered URL is invalid. Please provide a valid URL";
-            // }
         };
 
         //checks if the given ticket exist
         $scope.checkTicket = function () {
-            // var downloadUrl = "";
             if ($scope.attachmentProperties.attachments.length === 0) {
-                // var urlCall = $scope.apiUrl.http + "//" + $scope.apiUrl.host + appConfig.jiraApiPrefix + "/" + $scope.apiUrl.ticketKey[0];
                 apiFactory.getJIRAInfo(JiraService.buildUrlCall('issueKey', $scope.apiUrl)).then(function (response) {
-                        if (response.fields.attachment.length === 0) {
+                    if (response.fields.attachment.length === 0) {
+                        $scope.importProperty.importing = false;
+                        SDLCToolExceptionService.showWarning('Import unsuccessful', 'There were no attachments found in this ticket.', SDLCToolExceptionService.DANGER);
+                    } else if (response.fields.attachment.length > 0) {
+                        $scope.attachmentProperties.attachments = $filter('orderBy')($scope.buildAttachmentsArray(response.fields.attachment), 'showOrder', true);
+                        if ($scope.attachmentProperties.attachments.length === 1) {
+                            $scope.getAttachment($scope.attachmentProperties.attachments[0].downloadUrl);
+                        } else if ($scope.attachmentProperties.attachments.length > 1) {
+                            $scope.attachmentProperties.selectedAttachment = $scope.attachmentProperties.attachments[0].downloadUrl;
+                            $scope.attachmentProperties.hasAttachments = true;
                             $scope.importProperty.importing = false;
-                            SDLCToolExceptionService.showWarning('Import unsuccessful', 'There were no attachments found in this ticket.', SDLCToolExceptionService.DANGER);
-                        } else if (response.fields.attachment.length > 0) {
-                            // $scope.isTicket = true;
-                            //                      $scope.getNewestAttachment(response.fields.attachment);
-                            $scope.attachmentProperties.attachments = $filter('orderBy')($scope.buildAttachmentsArray(response.fields.attachment), 'showOrder', true);
-                            //                      console.log($scope.attachmentProperties.attachments);
-                            if ($scope.attachmentProperties.attachments.length === 1) {
-                                $scope.getAttachment($scope.attachmentProperties.attachments[0].downloadUrl);
-                            } else if ($scope.attachmentProperties.attachments.length > 1) {
-                                $scope.attachmentProperties.selectedAttachment = $scope.attachmentProperties.attachments[0].downloadUrl;
-                                $scope.attachmentProperties.hasAttachments = true;
-                                $scope.importProperty.importing = false;
-                            } else if ($scope.attachmentProperties.attachments.length === 0) {
-                                $scope.importProperty.importing = false;
-                                SDLCToolExceptionService.showWarning('Import unsuccessful', 'There were no valid yaml attachments found in this ticket.', SDLCToolExceptionService.DANGER);
-                            }
+                        } else if ($scope.attachmentProperties.attachments.length === 0) {
+                            $scope.importProperty.importing = false;
+                            SDLCToolExceptionService.showWarning('Import unsuccessful', 'There were no valid yaml attachments found in this ticket.', SDLCToolExceptionService.DANGER);
                         }
-                    },
+                    }
+                },
                     function (exception) {
                         $scope.importProperty.importing = false;
                         if (exception.status === 404) {
@@ -290,7 +272,6 @@ angular.module('sdlctoolApp')
         $scope.buildAttachmentsArray = function (attachments) {
             var attachmentArray = [];
             angular.forEach(attachments, function (attachment) {
-                //              
                 if ((attachment.mimeType === 'application/x-yaml' && attachment.size <= 5000000)) {
                     var date = $filter('date')(attachment.created, 'medium');
                     var names = attachment.filename.split('_');
@@ -328,19 +309,11 @@ angular.module('sdlctoolApp')
         $scope.readYamlFile = function (file) {
             var yamlData = '';
             var r = new FileReader();
-            //        console.log(file.type);
             if (file.size > 5000000) {
                 $scope.importProperty.importing = false;
                 $scope.failMessage = 'File limit 5MB exceeded.';
                 $scope.uploadFail = true;
-                //            if(status.file && status.jira){SDLCToolExceptionService.showWarning('Import unsuccessful', "File limit was exceeded.", SDLCToolExceptionService.DANGER);}
-            }
-            //        else if(!angular.equals(file.type, "application/x-yaml")){
-            //            $scope.failMessage = "Wrong file format. Only  *.yml  are allowed.";
-            //            $scope.uploadFail = true;
-            //            SDLCToolExceptionService.showWarning('Import unsuccessful', "Wrong file format. Only  *.yml  are allowed.", SDLCToolExceptionService.DANGER);
-            //        }
-            else {
+            } else {
                 //executes this function once the file is successfully read.
                 r.onload = function (event) {
                     yamlData = event.target.result;
@@ -348,11 +321,10 @@ angular.module('sdlctoolApp')
                         var doc = jsyaml.safeLoad(yamlData, {
                             filename: file.name
                         });
-                        //console.log(doc);
-                        $scope.buildSystemSettings(doc);
-                        $scope.buildRequirement(doc.requirementCategories);
+                        buildSystemSettings(doc);
+                        buildRequirementsList(doc.requirementCategories);
                     } catch (e) {
-                        // console.log(e);
+                        console.log(e)
                         $scope.importProperty.importing = false;
                         SDLCToolExceptionService.showWarning('Import unsuccessful', 'Yaml file could not be read please contact the developers.', SDLCToolExceptionService.DANGER);
                     }
@@ -369,7 +341,6 @@ angular.module('sdlctoolApp')
                 $scope.failMessage = 'File limit exceeded.';
                 $scope.uploadFail = true;
                 $scope.importProperty.importing = false;
-                //            if(status.file && status.jira){SDLCToolExceptionService.showWarning('Import unsuccessful', "File limit was exceeded.", SDLCToolExceptionService.DANGER);}
             } else {
                 //executes this function once the file is successfully read.
                 r.onload = function (event) {
@@ -378,8 +349,8 @@ angular.module('sdlctoolApp')
                         var doc = jsyaml.safeLoad(yamlData, {
                             filename: file.name
                         });
-                        $scope.buildSystemSettings(doc);
-                        $scope.buildRequirement(doc.requirementCategories);
+                        buildSystemSettings(doc);
+                        buildRequirementsList(doc.requirementCategories);
                     } catch (e) {
                         $scope.importProperty.importing = false;
                         SDLCToolExceptionService.showWarning('Restore unsuccessful', 'Something wrent wrong restoring your session. Please import a valid one from Jira or create a new artifact.', SDLCToolExceptionService.DANGER);
@@ -389,8 +360,7 @@ angular.module('sdlctoolApp')
             }
         };
 
-        $scope.buildRequirement = function (requirementCategories) {
-            // var setIds = [];
+        function buildRequirementsList(requirementCategories) {
             var jiraStatus = {};
             jiraStatus.allStatus = [];
             var hasIssueLinks = false;
@@ -400,10 +370,9 @@ angular.module('sdlctoolApp')
             angular.forEach(requirementCategories, function (category) {
                 var lastElementOrder = 0;
                 angular.forEach(category.requirements, function (requirement) {
-                    
+
                     reqCounter++;
                     var values = [];
-                    // var linkStatus = {};
                     newStyleAlternativeInstances[requirement.id] = {};
                     angular.forEach(requirement.optColumns, function (optColumn) {
                         angular.forEach(optColumn.content, function (content) {
@@ -521,21 +490,30 @@ angular.module('sdlctoolApp')
             getRequirementsFromImport.setProperty($scope.importObject).then(function () {
                 $scope.close();
             });
-        };
-        $scope.buildSystemSettings = function (system) {
+        }
+
+        function buildSystemSettings(system) {
             $scope.name = system.name;
             var projecttypes = [];
             var collections = [];
             angular.forEach(system.collections, function (collection) {
                 var collValues = [];
+                var newCategoryInfo = undefined;
                 angular.forEach(collection.values, function (instance) {
+                    var updatedInstanceInfo = findCollectionCategoryFromInstanceId(instance.collectionInstanceId);
+                    if (updatedInstanceInfo) {
+                        newCategoryInfo = {
+                            name: updatedInstanceInfo.categoryName,
+                            id: updatedInstanceInfo.categoryId
+                        }
+                    }
                     collValues.push({
-                        type: instance.type,
+                        type: updatedInstanceInfo ? updatedInstanceInfo.instanceName : instance.type,
                         collectionInstanceId: instance.collectionInstanceId
                     });
                 });
                 collections.push({
-                    categoryName: collection.categoryName,
+                    categoryName: newCategoryInfo ? newCategoryInfo.name : collection.categoryName,
                     values: collValues
                 });
             });
@@ -560,8 +538,8 @@ angular.module('sdlctoolApp')
             });
             var ticket = system.ticket;
             // in case a yaml file was manual uploaded to a JIRA ticket without giving the ticket URL in this file.
-            if((angular.isUndefined(ticket) || (angular.isDefined(ticket) && $.isEmptyObject(ticket))) && $scope.status.jira && angular.isDefined($scope.jiraLink.url)) {
-                ticket = { 
+            if ((angular.isUndefined(ticket) || (angular.isDefined(ticket) && $.isEmptyObject(ticket))) && $scope.status.jira && angular.isDefined($scope.jiraLink.url)) {
+                ticket = {
                     url: $scope.jiraLink.url,
                     key: Helper.buildJiraUrl($scope.jiraLink.url.split('/')).ticketKey[0]
                 };
@@ -576,7 +554,26 @@ angular.module('sdlctoolApp')
                 colls: collections
             };
             sharedProperties.setProperty(systemSetting);
-        };
+        }
+
+        function findCollectionCategoryFromInstanceId(id) {
+            if ($scope.collections) {
+                for (var i = 0; i < $scope.collections.length; i++) {
+                    var collectionCategory = $scope.collections[i];
+                    for (var j = 0; j < collectionCategory.collectionInstances.length; j++) {
+                        var colInstance = collectionCategory.collectionInstances[j];
+                        if (colInstance.id === id) {
+                            return {
+                                categoryId: collectionCategory.id,
+                                categoryName: collectionCategory.name,
+                                instanceName: colInstance.name
+                            }
+                        }
+                    }
+                }
+            }
+            return;
+        }
 
         $scope.cleanAll = function () {
             // cleans the check authenticator promise if this one is running.
@@ -591,10 +588,6 @@ angular.module('sdlctoolApp')
 
         $scope.close = function () {
             $location.path('/requirements');
-            // $scope.importProperty.importing = false;
-            // $scope.cancel();$uibModalStack.dismissAll("cancel");
-            // SDLCToolExceptionService.showWarning('Import successful', 'The Secure SDLC artifact ' + $scope.name + ' was successfully imported.', SDLCToolExceptionService.SUCCESS);
-            // $scope.cancel();
             $scope.cleanAll();
         };
     });

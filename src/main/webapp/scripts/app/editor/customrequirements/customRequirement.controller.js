@@ -21,7 +21,7 @@ angular.module('sdlctoolApp')
             add: false,
             edit: false
 		};
-		
+
         $scope.setOptionColumns = function () {
             angular.forEach($scope.crObject.optionColumns, function (optColumn) {
                 $scope.value = {
@@ -58,6 +58,7 @@ angular.module('sdlctoolApp')
                             showOrder = value.showOrder;
                             name = value.name;
                             valueId = value.id;
+                            $scope.statValue.value = value;
                         }
 
                     });
@@ -112,7 +113,7 @@ angular.module('sdlctoolApp')
         };
         $scope.selectRequirement = function (id) {
             angular.forEach($scope.crObject.requirements, function (req) {
-				
+
                 if (req.id === id) {
                     angular.extend($scope.requirement, req);
                     $scope.getStatusColumn();
@@ -145,8 +146,6 @@ angular.module('sdlctoolApp')
 
         $scope.close = function () {
             var item = {};
-            //		  $scope.updateOptColumns();
-            //   if($scope.status.add) {
             var index = -1;
             var categoryIndex = 0;
             angular.forEach($scope.categories, function (category) {
@@ -162,10 +161,6 @@ angular.module('sdlctoolApp')
                 requirement: $scope.requirement,
                 categoryIndex: categoryIndex
             };
-            //   } else if($scope.status.edit) {
-            // 	  item = {requirement: $scope.requirement};
-
-            //   }
             $uibModalInstance.close(item);
         };
     });

@@ -24,9 +24,9 @@ angular.module('sdlctoolApp')
         /**
          * Start the securityCAT automated test.
          */
-        function startTest(data) {
+        function startTest(data, instanceUrl) {
             return new Promise(function (resolve, reject) {
-                apiFactory.testRequirementApi('POST', appConfig.securityCATTestApi, data, headerConfig, true).then(function (response) {
+                apiFactory.testRequirementApi('POST', appConfig.securityCATTestApi, data, headerConfig, true, instanceUrl).then(function (response) {
                     var headers = {
                         location: response.headers().location,
                         config: headerConfig
@@ -48,7 +48,7 @@ angular.module('sdlctoolApp')
          */
         function checkAuthentication(testObject, displayProperty, spinnerProperty, promise) {
             headerConfig.withCredentials = true;
-            startTest(testObject).then(function (response) {
+            startTest(testObject, displayProperty.url).then(function (response) {
                 if (response.status === 302) {
                     authenticatorService.startCheckAuthenticationProcess(testObject, displayProperty, spinnerProperty, promise, checkAuthentication);
                 } else {
@@ -73,9 +73,9 @@ angular.module('sdlctoolApp')
         /**
          * Stop a running test.
          */
-        function stopTest(id, requestHeaderConfig) {
+        function stopTest(id, requestHeaderConfig, instanceUrl) {
             var restCall = appConfig.securityCATTestApi + '/' + id;
-            return apiFactory.testRequirementApi('DELETE', restCall, '', requestHeaderConfig, false);
+            return apiFactory.testRequirementApi('DELETE', restCall, '', requestHeaderConfig, false, instanceUrl);
         }
 
         var testAutomation = {

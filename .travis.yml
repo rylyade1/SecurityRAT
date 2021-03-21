@@ -1,4 +1,3 @@
-sudo: required
 language: java
 services:
 - docker
@@ -7,44 +6,51 @@ cache:
   - "$HOME/.m2"
   - "$TRAVIS_BUILD_DIR/node_modules"
 jdk:
-- oraclejdk8
+- openjdk8
 env:
   global:
-  - secure: G/OW+p69n40jVm+O/RiB4qCYQSq82WMxyWfXfI64L2hjnKudc0nSpt11sl9qsPOKQABMzC5SE00CqWpbmducstIDp7vmZ9L/mv2pyjOzyAwT3zwQbv9ilNk5REYt8KU/4AVf02sxnGmfsTnGADNtPPXct7RQAWRYxbRyh75/ZXlj+p4k0BmctxgUOwbEeeXduqr5HW514s92Ligjhag9D1Z9Fu508okEvgok51B/U0ccVWUDyxDb9HXqx9+Unf+ZB9tg7ycBksSMIYNc4MqBG7qszFzeoiKSJtYT93ci1iRlyNhJ16HfcoyqaEB6iSbdZKJQng7pQhW+mOUDYiXQwMNRYgKKTmoigz21DpW89Im+7UfjrW21Y1IU2ODyRRlVrcNlRnDPtZbVjKsziw0IDE+3SmTuPWX0lvIVQ0QV2EJUiT/XWvppzgF1CplSBbeaC1WYpiVNfeFx8EyUL+hq4CPBdgASp8p5/TXCW//kwCPCZztUUZGZMyr17DzPJi9/3C8yaEhB1YviALwucqD0lg+f4ZSzPkvsJUvN6tecY+mCYnKI6DxRuz07olNT8OK0vcbk3kpabYY9ZMDy4MSlamlhj2FNl69akDXSaIISe37EY+otgEQykPWmhD6MqLfkJlcqaKZD7s3e22zrt9ny8ltnwXOViRulMAJq9j8HJgA=
-  - secure: fXrPz0UmUNKv1HcQZYcqAQaU7cb97MwSAfMcMv4QU7XROwQh66aZGq15QR8Hm1LMasPXXPMatFaVaUDXe751IHhSMN3chC3ffh1DMf4ghSwRNCVMHaztP6q7bjz3+MR4dkisN87WqTqy1vKva3tbFLC7JR4DRoiXlyoWplN3NLveiScFJ9tT5FpOTPaWzZdrLyhHJNqiDtp+Wo4JFjfUy6YbwVFcRX/wErrs2AfnZH+2qNqRpt8OubchQVqpXW5VVmvwRMZIJslnOecH9zGb4PQW99ffOQdTv7N3ogmWlYbZcm7m7Ktc7Art6EjuCxrVehlTCRwBoc4TL5phS7rDSlMpTesvvjRlAyge61EZliZ8hH6hKGDovksWybBcD0b4aEqM9O7uW3hE/jj/Gans3QppaojPUkHmvb6AQ+UJh+MdCHuhefwM/slq2OeHzX7QTHi6DlrD2dfN5x6BvzjbBRUfjGxoyqsNcKjRlsxMrLhsupYucO8T/xeeL6dpBS4g5//0i8jNw0H08Taj9JyqdC+xU6H3aT3swpdkCkIQvXif78OomRna2EjINIe1aKREvISqjkN9GkBs3GSanW0Ml51JB1R98ozINB7YlhNKz0hVQAjsqTqTIx+gbbyaQ9Ix6YoLPvQnd3sg9i4g7q7daVhYboFAKEMJXSbGGfBalGc=
-  - SECRATDOCKERREPO: rylyade1/testsecrat
+  - secure: AgVMUXaAb/XM+NmJOaXwyd6u5OKDflvm2SY+QAyAz5VKkI4tDuaPVKOTJ+bAy5gR2Y7naOwCAot2ucLsDnx2NYCh5G6EfLtdF5sH1YD/ZBcCne+ySsSRSQZulJ+7wyNCCCSW1nXzAehq/fVZP4K86KtAGYS+C0OvrCoQx3v69AeqFJmypNBtMdrdXqrEwCb21tRbdOe8vhXMAk2VLtUIvDyj2ZYONaCxoiI70XGSdj3r3gtc3gXpCq0fBWLo3KXhYVlkr9YdLtIBgx/mwvs1CWOS+U9iDn1537/Ag/h4fIZx/wb1EUl/hXnwpX2sUBYp0b7Oy32uhxVni4pPHbAtGUSkUol878jq2chOC3OTR1YD97e27ebZiIWxThdfgC9TpHMwyplb6rjqCVZXczWxJ2qBzoHdmQBwqSqNJJhmwAUQkHGvkA7lz3CPvAubLnPRR9gqmPPY2aWSlCw9xlENcLxnkJom4lkxFTz8FwKnLskGOyJeoETPyeD/wHR/pULj7DzNTMRDhCsZID1vSuEDPi5xeCzZs3WgZvRt/EX4K5LNfo2mstuCfIf5wF77duWrbRaNLhsfQt006UbcwsyOeXLipJcLL+0sZ9yzdJ0fGN/a8ByMxq26rnZunULLZ/8zglxeUPfkQLVG6mHTCpOHiR9D1bLsYRFXFRDYa6/rDr0=
+  - secure: Tg/OWV+TixAEomzVmxxckqshmtVZTCbEHdozwsdpeOnxEf92NVcfLFLxto31ln4sY/RfcAF7V7f3ePa9KHnbCXx8AsNdmPzFwA3cB7jNVVBxS0dqMBSm63FjNApkIkty3LB9YNpCyRe6eu9cEBXwoXo6Ls9XoINcWKYzqlhiv8Kx1hXsyD2sV7D31lY3MirsVbbTu6+0jxRCyRM0w9NUWWXuEV83NpMuJwKGzvqTROELghW6CNvRXENZON1f0m7udKlCB0uC9VwRtZoKXqmfJ5bk9OntWF2YggEEZ5jBRhPDLRXTSx0EI0DoXZc1bhBfQWK5ZRsShFHvVZVRl7YLrKe7GaIf6ITm0I9WdIY6X5dZu5DoJ/v//+0sncowQTQPZ0YsM1GhwDoFGSvZfo5Mr3423EogYlFU9nrBsx4DrxlxHdEMwB69yWvyHfY4GeVpypjryeuCo1gLLtjPt1BQP2V9ixd4ixZLdqqI1a9QK1TJgRjtxQdQY9zDFQgurcrQj8lnzYB7bhiO2DTf+9pm7irJgessI8jNHNPnuHk+HQWbSn9MTmENRIGhDlm7I0+iXT2y33F/F9bqJR7dSUT1w1gULdsif5S+lmfMsFgPqnZziiExroScefjXqzOkDqqGM4mGhNyVcaKux0rXXo+7GsjKkgodF9rvF6p2D08fMqQ=
+  - SECRATDOCKERREPO=securityrat/securityrat
 before_install:
 - sudo apt-get update
-- sudo curl -sL https://deb.nodesource.com/setup_4.x | sudo bash
+- sudo curl -sL https://deb.nodesource.com/setup_12.x | sudo bash
 - sudo apt-get install nodejs
 - sudo apt-get install build-essential
 - sudo npm install -g bower grunt-cli
-script:
-- mvn -Pprod -DskipTests package
-- export WAR_FILE="$(ls target/ | egrep .*\.war$)"
-- export NAME="$(echo $WAR_FILE | egrep -oh '(.*)[^\.war]')"
-- export TAG_NAME=$(git describe --exact-match)
-- chmod +x createArchive.sh
-- "./createArchive.sh"
-branches:
-  only:
-  - master
-before_deploy:
-- export RELEASE_ZIP_FILE=$(ls target/*.zip)
-- export RELEASE_TAR_FILE=$(ls target/*.tar.gz)
-deploy:
-  provider: releases
-  api_key:
-    secure: fkTZAqgYUwDD6WzQ3ZyUleYEW2X/F4PU3iRp9UhfxIvk0OMsZ5pqWHTgYzgg2b49vSV93dCBZFYnTlUwT3aQBWAyGDNJ5/l3JNrjD2DZOsRia5tijXJB6X3e4QSY2U8XzA5AVxZ3kDYE5NzRf0usw6+NwYooAHHqglDGbUdIB9QNqfm5XQFYL4KpD1XsGA3UYVYDiMGDi5nWO+BKQD0hGN6w3oSQf40CDik2lPVWGfpdlYnUcF8Ii0ko5tHCFblvNeVcT9pRsMQaSbo/5UsszUaW0/cvOpbfeNnwp914s5OoqXCP22vZaFapbsW0cEa+yNSOs2b4oBhl+nR2vV6Txm4g9zpX3/2Jz9ZvwZCr8k3HMUl1HQoXR0gNJsg308O3AkdZLnEqb9nVCtmRC1x89AI5idye5GwIlfq1woS5yb7Zno8v1O+pZA3/tMqiwSElWQFtMtZFAF2xD0eD3QJ4uaXwjSR5lc5z11vPsFMfRYa8Bj/Nhnt3q+HAulTzArS5R6OQiAfopcGc1j9tFiNG6dJBZ+UJ1Nl8mflectXiq4mfPuVvVHSSjiPFptFxAwz1589bWBJft5lQAx8BPyO9jU7yUGZl3PIIOhszSHrQkwQ7fZq7NhploI414AGtowYM6Z0o26XNJDiC44c+alVZKq1bQaucc27mC4F5RwX29G8=
-  skip_cleanup: true
-  file_glob: true
-  file:
-  - "${RELEASE_ZIP_FILE}"
-  - "${RELEASE_TAR_FILE}"
-  on:
-    repo: rylyade1/SecurityRAT
-    branch: master
-    condition: "-n $TAG_NAME"
-after_deploy:
-- chmod +x afterDeploy.sh
-- "./afterDeploy.sh"
+stages:
+- test
+- name: deploy
+jobs:
+  include:
+  - stage: test
+    script:
+    - mvn clean test
+  - stage: deploy
+    script:
+    - mvn clean
+    - mvn -Pprod -DskipTests package
+    - export WAR_FILE="$(ls target/ | egrep .*\.war$)"
+    - export NAME="$(echo $WAR_FILE | egrep -oh '(.*)[^\.war]')"
+    - export TAG_NAME=$(git describe --exact-match)
+    - chmod +x createArchive.sh
+    - "./createArchive.sh"
+    before_deploy:
+    - export RELEASE_ZIP_FILE=$(ls target/*.zip)
+    - export RELEASE_TAR_FILE=$(ls target/*.tar.gz)
+    deploy:
+      provider: releases
+      api_key:
+        secure: h5VXEniWJq45I5/YAWBdJXR1rSxvIf0coME3UlOVgykpgFyzqgRD/ToM8m/Kh9I4I8L/Is+YrkAM+goTf+YOj/6d6/sUnNXGrm1DUykL8C4xJkRdKA2Ukyo3r20buPtQszMJ2R0yEcWPqsIw2yqCF8oo33T7Q2BXrmj5d3lNRJMFED2znaW1xuNUTQKDjQwszsNOh72djPklRdrAlkhA3pal1SEnfyeV/qKZXbTEPPbmPpX94X/k+z6k4LPww1Ssi3a49eSuJY3Y2urIrVg9MN8DFIcY0eGqMSG4R2sPu3Up47sSsIRCQBewDcEcR8uZSZ0A93Op1gKnADg6X11ynrFlggChqkRKVmcNVlICV2Lg2Z4/05Iu/It1ZQNarCGJB6FuCANMZCCVYpXmtrZ2Q6xBqTX/qHwHl/MssofUgx1RglUhixiSoufSWWobC5p5GJlyyzBRb/eObjvnoOxgYMlIsLh32dKj5SXkk/NVUFvcsPLnNRH/vdPTvnBlOeV+R2019+0QK/o7LKh10b6x4o2yHOSXIovDdLJe/rfoezvEJpzXxUeBT8ZTAGCoZ9jlUG1z6tqTQB5pOyqAUtdTSHP1ybhigA2381HE+ETp/FAJR4YOsJ8kROHR3NLdF0d3iMsGtSWK0S65PIsg7vA673GWf0pEP+0mK7X0O9SKXy4=
+      skip_cleanup: true
+      file_glob: true
+      file:
+      - "${RELEASE_ZIP_FILE}"
+      - "${RELEASE_TAR_FILE}"
+      on:
+        repo: SecurityRAT/SecurityRAT
+        branch: master
+        condition: "-n $TAG_NAME"
+    after_deploy:
+    - chmod +x afterDeploy.sh
+    - "./afterDeploy.sh"

@@ -140,3 +140,4 @@ keystore.p12
 # tar file
 ######################
 *.tar.gz
+.factorypath

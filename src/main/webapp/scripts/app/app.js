@@ -3,21 +3,20 @@
 /* globals document, re_weburl, XMLHttpRequest, hljs, jiraApiPrefix, jiraAttachment, jiraApiIssueType, importPrefix, jiraComment, jiraApiProject, jiraRestApi, localStorageKey, securityCATTestApi */
 
 angular.module('sdlctoolApp', ['LocalStorageModule',
-        'ui.bootstrap', // for modal dialogs
-        'ngResource', 'ui.router', 'ngCookies', 'ngCacheBuster', 'ngFileUpload', 'infinite-scroll',
-        'ngAnimate', // editor stuff from here on...
-        'ngRoute',
-        'ngSanitize',
-        'ngTouch',
-        'ui.sortable',
-        'angularjs-dropdown-multiselect',
-        'angular-confirm',
-        'angularSpinner',
-        'hc.marked',
-        'disableAll',
-        'frapontillo.bootstrap-switch',
-        'ui.indeterminate'
-    ])
+    'ui.bootstrap', // for modal dialogs
+    'ngResource', 'ui.router', 'ngCookies', 'ngCacheBuster', 'ngFileUpload', 'infinite-scroll',
+    'ngAnimate', // editor stuff from here on...
+    'ngRoute',
+    'ngSanitize',
+    'ui.sortable',
+    'angularjs-dropdown-multiselect',
+    'angular-confirm',
+    'angularSpinner',
+    'hc.marked',
+    'disableAll',
+    'frapontillo.bootstrap-switch',
+    'ui.indeterminate'
+])
     /* jshint unused: false*/
     .run(function ($rootScope, $location, $window, $http, $state, Auth, Principal, ENV, VERSION, Account, $confirm) {
         $rootScope.ENV = ENV;
@@ -57,21 +56,17 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
             if (angular.isDefined(fromParams.isDirty) && fromParams.isDirty) {
                 event.preventDefault();
                 $confirm({
-                        text: 'You have unsaved Changes. Are you sure you want to leave the page without saving?',
-                        title: 'Confirm',
-                        isDirty: fromParams.isDirty,
-                        ok: 'Ignore Changes',
-                        cancel: 'Cancel'
-                    }, {
-                        templateUrl: 'scripts/app/editor/confirm-modal.html'
-                    })
+                    text: 'You have unsaved Changes. Are you sure you want to leave the page without saving?',
+                    title: 'Confirm',
+                    isDirty: fromParams.isDirty,
+                    ok: 'Ignore Changes',
+                    cancel: 'Cancel'
+                }, {
+                    templateUrl: 'scripts/app/editor/confirm-modal.html'
+                })
                     .then(function () {
                         fromParams.isDirty = false;
                         $state.go(toState.name, toStateParams);
-                        // $scope.onRouteChangeOff = '';
-                        // $scope.requirementProperties.requirementsEdited = false;
-                        // window.onbeforeunload = function (e) {};
-                        // window.location.href = $location.url(newUrl).hash();
                     }, function () {
                         event.preventDefault();
                     });
@@ -115,10 +110,6 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                             }
                         });
                     }
-                    //                      else (this.status >= 400){
-                    ////                            constants = this.statusText;
-                    //                          
-                    //                      }
                 }
             };
             ajax.send(null);
@@ -192,10 +183,11 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
         var apiPrefix = '/frontend-api/';
         var responseHeadersNeeded = false;
 
-        apiFactory.testRequirementApi = function (method, restcall, data, headerConfig, headersNeeded) {
+        apiFactory.testRequirementApi = function (method, restcall, data, headerConfig, headersNeeded, instanceUrl) {
             var url = '';
             if (!re_weburl.test(restcall)) {
-                url += appConfig.securityCAT.endsWith('/') ? appConfig.securityCAT.substr(0, appConfig.securityCAT.length - 1) : appConfig.securityCAT;
+                url = angular.isDefined(instanceUrl) && instanceUrl !== '' ? instanceUrl : appConfig.securityCAT;
+                url = url.endsWith('/') ? url.substr(0, url.length - 1) : url;
             }
 
             url += restcall;
@@ -234,12 +226,12 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
         apiFactory.execute = function (method, path, data, headerConfig, withCredentials) {
 
             return $http({
-                    'method': method,
-                    'url': path,
-                    'data': data,
-                    'withCredentials': angular.isDefined(withCredentials) ? withCredentials : true,
-                    'headers': headerConfig
-                })
+                'method': method,
+                'url': path,
+                'data': data,
+                'withCredentials': angular.isDefined(withCredentials) ? withCredentials : true,
+                'headers': headerConfig
+            })
                 .then(
                     // 200 OK
                     function (response) {
@@ -258,7 +250,6 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                         }
 
                         if (401 === parseInt(response.status, 10)) {
-                            //                          SDLCToolExceptionService.showPersistentWarning('Unauthorized', 'Login session has expired. Please reload the page in order to login again.', SDLCToolExceptionService.DANGER);
                             self.blockRequests = true;
                             return $q.reject(response);
                         }
@@ -268,8 +259,6 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                         }
 
                         if (403 === parseInt(response.status, 10)) {
-                            //                          $location.url("/noaccess");
-                            //                          SDLCToolExceptionService.showPersistentWarning('Forbidden', 'You do not have permission to access this resource.', SDLCToolExceptionService.DANGER);
                             self.blockRequests = true;
                             return $q.reject(response);
                         }
@@ -307,6 +296,7 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
         jiraComment: jiraComment,
         jiraApiProject: jiraApiProject,
         jiraRestApi: jiraRestApi,
+        jiraBrowseUrlPathName: jiraBrowseUrlPathName,
         localStorageKey: localStorageKey,
         securityCATTestApi: securityCATTestApi
     })
@@ -357,9 +347,11 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                     });
                     modalInstance.result.then(function () {
                         returnValue.resolve('start');
+                    }, function () {
+                        returnValue.reject('Ex001'); // Ex001 code for authentication start process was not triggered.
                     });
                 } else {
-                    returnValue.resolve(true);
+                    returnValue.reject('Ex001');
                 }
                 return returnValue.promise;
             },
@@ -370,7 +362,6 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                     return $timeout(function () {
                         var header = 'Authentication timeout';
                         var message = 'You could not authenticate yourself within the time interval! Please try later.';
-                        //                        $uibModalStack.dismissAll('close authentication modal');
                         $interval.cancel(promise.interval);
                         spinnerProperty.showSpinner = false;
                         if (angular.isDefined(spinnerProperty.authenticating)) {
@@ -420,6 +411,13 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                                 promise.runningModalPromise = promise.runningModalPromise();
                             }
                         }
+                    }, function (reject) {
+                        if (angular.isDefined(spinnerProperty.authenticating)) {
+                            spinnerProperty.authenticating = false;
+                        }
+                        spinnerProperty.showSpinner = false;
+                        promise.derefer.reject(reject);
+                        self.cancelPromises(promise);
                     });
                 }
             }
@@ -503,33 +501,14 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
     })
 
     .filter('filterByCategories', function () {
-        return function (array, categories) {
-            if (categories.length === 0) {
-
+        return function (array, selectedCategories) {
+            if (selectedCategories.length === 0) {
                 return array;
             } else {
                 var newView = [];
                 angular.forEach(array, function (requirement) {
-                    angular.forEach(categories, function (cat) {
-                        if (cat.category === requirement.category) {
-                            newView.push(requirement);
-                        }
-                    });
-                });
-                return newView;
-            }
-        };
-    })
-    .filter('filterByCategoriesForReqSkeletons', function () {
-        return function (array, categories) {
-            if (categories.length === 0) {
-
-                return array;
-            } else {
-                var newView = [];
-                angular.forEach(array, function (requirement) {
-                    angular.forEach(categories, function (cat) {
-                        if (cat.id === requirement.reqCategory.id) {
+                    angular.forEach(selectedCategories, function (selectedCategory) {
+                        if (selectedCategory.id === requirement.categoryId) {
                             newView.push(requirement);
                         }
                     });
@@ -625,9 +604,9 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                     for (var j = 0; j < requirement.statusColumns.length; j++) {
                         var statColumn = requirement.statusColumns[j];
                         if (statColumn.isEnum && $filter('filter')(selectedStatus[statColumn.id], {
-                                id: statColumn.valueId,
-                                name: statColumn.value
-                            }).length > 0) {
+                            id: statColumn.valueId
+                            // name: statColumn.value
+                        }).length > 0) {
                             newView.push(requirement);
                             break;
                         }
@@ -647,16 +626,20 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                     for (var i = 0; i < selectedTicketStatus.length; i++) {
                         var element = selectedTicketStatus[i];
                         if (angular.equals(element.name.toLowerCase(), 'no ticket')) {
-                            if(requirement.linkStatus.ticketStatus.length === 0) {
+                            if (angular.isUndefined(requirement.linkStatus)
+                                || (angular.isDefined(requirement.linkStatus)
+                                    && requirement.linkStatus.ticketStatus.length === 0)) {
                                 newView.push(requirement);
                                 break;
                             }
                         } else {
-                            if ($filter('filter')(requirement.linkStatus.ticketStatus, {
+                            if (angular.isDefined(requirement.linkStatus)) {
+                                if ($filter('filter')(requirement.linkStatus.ticketStatus, {
                                     name: element.name
                                 }).length > 0) {
-                                newView.push(requirement);
-                                break;
+                                    newView.push(requirement);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -686,14 +669,14 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
     })
 
     .filter('filterCategoryByCategory', function () {
-        return function (array, categories) {
-            if (categories.length === 0) {
+        return function (array, selectCategories) {
+            if (selectCategories.length === 0) {
                 return array;
             } else {
                 var newView = [];
                 angular.forEach(array, function (category) {
-                    angular.forEach(categories, function (value) {
-                        if (angular.equals(category.label, value.category)) {
+                    angular.forEach(selectCategories, function (selectedCategory) {
+                        if (category.id === selectedCategory.id) {
                             newView.push(category);
                         }
                     });
@@ -759,8 +742,8 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
                                 var optColumn = req.optionColumns[j];
                                 if (angular.isDefined(textfilterObject[optColumn.showOrder]) && textfilterObject[optColumn.id] !== '') {
                                     if ($filter('filter')(optColumn.content, {
-                                            content: textfilterObject[optColumn.showOrder]
-                                        }).length > 0) {
+                                        content: textfilterObject[optColumn.showOrder]
+                                    }).length > 0) {
                                         newArray.push(req);
                                         // break is need to prevent duplicate requirements in new array.
                                         break;
@@ -804,8 +787,8 @@ angular.module('sdlctoolApp', ['LocalStorageModule',
             return array;
         };
     })
-    .filter('sanitizeMarked', function($sanitize) {
-        return function(html) {
+    .filter('sanitizeMarked', function ($sanitize) {
+        return function (html) {
             return $sanitize(html);
         }
     });
